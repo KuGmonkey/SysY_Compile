@@ -59,6 +59,12 @@ int main(int argc, char *argv[])
     SymbolEntry *se4 = new IdentifierSymbolEntry(TypeSystem::voidType, "putch", identifiers->getLevel());
     SymbolEntry *se5 = new IdentifierSymbolEntry(TypeSystem::floatType, "getfloat", identifiers->getLevel());
     SymbolEntry *se6 = new IdentifierSymbolEntry(TypeSystem::voidType, "putfloat", identifiers->getLevel());
+    se1->setisfunc();
+    se2->setisfunc();
+    se3->setisfunc();
+    se4->setisfunc();
+    se5->setisfunc();
+    se6->setisfunc();
     identifiers->install("getint", se1);
     identifiers->install("getch", se2);
     identifiers->install("putint", se3);

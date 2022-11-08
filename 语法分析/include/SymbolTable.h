@@ -13,8 +13,9 @@ class SymbolEntry		//符号表节点类
 private:
     int kind;
 protected:
-    enum {CONSTANT, VARIABLE, TEMPORARY};	//常数   变量   ?
+    enum {CONSTANT, VARIABLE, TEMPORARY};	//常数   变量   
     Type *type;
+    bool isfunc = 0;
 
 public:
     SymbolEntry(Type *type, int kind);		//构造函数
@@ -24,6 +25,8 @@ public:
     bool isVariable() const {return kind == VARIABLE;};		//判断VARIABLE
     Type* getType() {return type;};				//获取类型
     virtual std::string toStr() = 0;				//纯虚函数 toStr()
+    bool getisfunc() const {return isfunc;};
+    void setisfunc(){isfunc=1;};
     // You can add any function you need here.
 };
 
@@ -89,6 +92,7 @@ public:
     bool isParam() const { return scope == PARAM; };
     bool isLocal() const { return scope >= LOCAL; };
     int getScope() const {return scope;};				//获取作用域
+
     // You can add any function you need here.
 };
 

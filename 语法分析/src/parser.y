@@ -58,7 +58,7 @@ Program
         ast.setRoot($1);	//<Ast.h>设置语法树根节点
     }
     ;
-Stmts					//???语句块
+Stmts					//语句块
     : Stmt {$$=$1;}
     | Stmts Stmt{
         $$ = new SeqNode($1, $2);	//<Ast.h>
@@ -172,7 +172,14 @@ UnaryExp						//一元表达式
             delete [](char*)$1;
             assert(se != nullptr);
         }
-        $$ = new FunctionCall(se, nullptr);		//调用该函数
+        if(se->getisfunc()){
+            $$ = new FunctionCall(se, nullptr);		//调用该函数
+        }
+        else{
+            fprintf(stderr, "Function \"%s\" is undefined\n", (char*)$1);
+            delete [](char*)$1;
+            assert(se->getisfunc());
+        }
         delete []$1;
     }
     |  ID LPAREN FuncRParams RPAREN{			//含参函数
@@ -212,8 +219,17 @@ MulExp							//乘除表达式
         if ($1->symbolEntry->getType()->isFloat() || $3->symbolEntry->getType()->isFloat()) {
             se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
             $$ = new BinaryExpr(se, BinaryExpr::MUL, $1, $3);
-        } else {
+        } else if ($1->symbolEntry->getType()->isInt() || $3->symbolEntry->getType()->isInt())
+        {
             se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::MUL, $1, $3);
+        } else if ($1->symbolEntry->getType()->isInt() || $3->symbolEntry->getType()->isFloat())
+        {
+            se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::MUL, $1, $3);
+        } else
+        {
+            se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
             $$ = new BinaryExpr(se, BinaryExpr::MUL, $1, $3);
         }
     }
@@ -226,8 +242,17 @@ MulExp							//乘除表达式
         if ($1->symbolEntry->getType()->isFloat() || $3->symbolEntry->getType()->isFloat()) {
             se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
             $$ = new BinaryExpr(se, BinaryExpr::DIV, $1, $3);
-        } else {
+        } else if ($1->symbolEntry->getType()->isInt() || $3->symbolEntry->getType()->isInt())
+        {
             se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::DIV, $1, $3);
+        } else if ($1->symbolEntry->getType()->isInt() || $3->symbolEntry->getType()->isFloat())
+        {
+            se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::DIV, $1, $3);
+        } else
+        {
+            se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
             $$ = new BinaryExpr(se, BinaryExpr::DIV, $1, $3);
         }
     }
@@ -252,8 +277,17 @@ AddExp							//加减表达式
         if ($1->symbolEntry->getType()->isFloat() || $3->symbolEntry->getType()->isFloat()) {
             se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
             $$ = new BinaryExpr(se, BinaryExpr::ADD, $1, $3);
-        } else {
+        } else if ($1->symbolEntry->getType()->isInt() || $3->symbolEntry->getType()->isInt())
+        {
             se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::ADD, $1, $3);
+        } else if ($1->symbolEntry->getType()->isInt() || $3->symbolEntry->getType()->isFloat())
+        {
+            se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::ADD, $1, $3);
+        } else
+        {
+            se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
             $$ = new BinaryExpr(se, BinaryExpr::ADD, $1, $3);
         }
     }
@@ -267,8 +301,17 @@ AddExp							//加减表达式
         if ($1->symbolEntry->getType()->isFloat() || $3->symbolEntry->getType()->isFloat()) {
             se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
             $$ = new BinaryExpr(se, BinaryExpr::SUB, $1, $3);
-        } else {
+        } else if ($1->symbolEntry->getType()->isInt() || $3->symbolEntry->getType()->isInt())
+        {
             se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::SUB, $1, $3);
+        } else if ($1->symbolEntry->getType()->isInt() || $3->symbolEntry->getType()->isFloat())
+        {
+            se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::SUB, $1, $3);
+        } else
+        {
+            se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
             $$ = new BinaryExpr(se, BinaryExpr::SUB, $1, $3);
         }
     }
@@ -348,7 +391,7 @@ Type							//类型（int,void）
         declType = TypeSystem::floatType;
     }
     ;
-DeclStmt			//声明语句
+DeclStmt			//声明语句    
     :
     Type Idlist SEMICOLON {
         $$ = new DeclStmt($2);	//$2:idlist
@@ -512,8 +555,9 @@ FuncDef							//函数定义
     :
     Type ID LPAREN {
         Type *funcType;
-        funcType = new FunctionType($1,{});		//???
+        funcType = new FunctionType($1,{});		
         SymbolEntry *se = new IdentifierSymbolEntry(funcType, $2, identifiers->getLevel());	//创建符号表节点se
+        se->setisfunc();
         identifiers->install($2, se);			//插入
         identifiers = new SymbolTable(identifiers);	//传入前向指针，创建新的符号表。即开启一个新的作用域
     }
@@ -534,6 +578,7 @@ FuncDef							//函数定义
         Type *funcType;
         funcType = new FunctionType($1,{});
         SymbolEntry *se = new IdentifierSymbolEntry(funcType, $2, identifiers->getLevel());	//符号表节点
+        se->setisfunc();
         identifiers->install($2, se);			//插入
         identifiers = new SymbolTable(identifiers);
     }
