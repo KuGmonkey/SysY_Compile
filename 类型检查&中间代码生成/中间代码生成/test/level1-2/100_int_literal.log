@@ -1,0 +1,4 @@
+test/level1-2/100_int_literal.ll:99:19: error: '%t55' defined with type 'i32' but expected 'i1'
+  %t198 = zext i1 %t55 to i32
+                  ^
+1 error generated.
